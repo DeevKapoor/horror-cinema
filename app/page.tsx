@@ -1,7 +1,9 @@
+// File: ./app/page.tsx
 'use client'
 import { useEffect, useState, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import Navigation from './components/Navigation'
+import Image from 'next/image' // Importing the Next.js Image component
 
 const strangeMovies = [
   { 
@@ -45,7 +47,6 @@ export default function Home() {
   const [showIntro, setShowIntro] = useState(true)
   const [showWarning, setShowWarning] = useState(false)
   const [currentFact, setCurrentFact] = useState(0)
-  const [currentMovie, setCurrentMovie] = useState(0)
   const audioRef = useRef<HTMLAudioElement>(null)
 
   useEffect(() => {
@@ -59,7 +60,6 @@ export default function Home() {
   useEffect(() => {
     const factInterval = setInterval(() => {
       setCurrentFact(Math.floor(Math.random() * strangeFacts.length))
-      setCurrentMovie(Math.floor(Math.random() * strangeMovies.length))
     }, 10000)
     return () => clearInterval(factInterval)
   }, [])
@@ -77,10 +77,10 @@ export default function Home() {
     }
   }
 
-  const MovieCard = ({ title, posterPath, year, reason }: { title: string, posterPath: string, year: number, reason: string }) => {
+  const MovieCard = ({ title, posterPath, reason }: { title: string, posterPath: string, reason: string }) => {
     return (
       <div className="relative group">
-        <img src={posterPath} alt={title} className="w-full h-auto object-cover rounded-lg shadow-lg" />
+        <Image src={posterPath} alt={title} className="w-full h-auto object-cover rounded-lg shadow-lg" width={400} height={600} /> {/* Updated to use Next.js Image */}
         <div className="absolute inset-0 bg-black bg-opacity-50 opacity-0 group-hover:opacity-100 transition-opacity">
           <p className="text-white p-4">{reason}</p>
         </div>

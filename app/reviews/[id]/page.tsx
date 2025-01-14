@@ -1,14 +1,41 @@
-// app/components/reviews/[id]/page.tsx
+/* eslint-disable @typescript-eslint/no-unused-vars */
 'use client';
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { Search, Film, ArrowLeft, Star } from 'lucide-react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import PageLayout from '../components/PageLayout'
+import Image from 'next/image'; // Use next/image for optimization
+import '../../components/styles.css'
 export default function ReviewsPage() {
   const router = useRouter();
-  const searchParams = useSearchParams();
-  const [state, setState] = useState({
+  const [state, setState] = useState<{
+      searchTerm: string;
+      searchResults: {
+        id: string;
+        title: string;
+        release_date: string;
+        poster_path: string | null;
+      }[];
+      selectedMovie: {
+        id: string;
+        title: string;
+        release_date: string;
+        poster_path: string | null;
+        overview: string;
+      } | null;
+      reviews: {
+        id: string;
+        author: string;
+        content: string;
+        rating: number | null;
+        source: string;
+        created_at: string;
+      }[];
+      loading: boolean;
+      movieDetailsFetched: boolean;
+      director: string;
+      cast: string[];
+    }>({
     searchTerm: '',
     searchResults: [],
     selectedMovie: null,
@@ -22,7 +49,7 @@ export default function ReviewsPage() {
   const TMDB_API_KEY = '95a07433f19cbefdd02f495c48939a37';
   const OMDB_API_KEY = 'da1a01ff';
 
-  const fetchMovieReviews = async (movieId) => {
+  const fetchMovieReviews = async (movieId: string) => {
     setState((prevState) => ({ ...prevState, loading: true, reviews: [] }));
     try {
       // Fetch TMDB movie details first to get the title
@@ -36,8 +63,8 @@ export default function ReviewsPage() {
       const creditsData = await creditsResponse.json();
   
       // Extract director and top-billed cast
-      const director = creditsData.crew.find((member) => member.job === 'Director')?.name || 'Unknown';
-      const cast = creditsData.cast.slice(0, 5).map((actor) => actor.name);
+      const director = creditsData.crew.find((member: { job: string; }) => member.job === 'Director')?.name || 'Unknown';
+      const cast = creditsData.cast.slice(0, 5).map((actor: { name: unknown; }) => actor.name);
   
       // Fetch TMDB reviews
       const tmdbResponse = await fetch(
@@ -51,11 +78,18 @@ export default function ReviewsPage() {
       );
       const omdbData = await omdbResponse.json();
   
-      let combinedReviews = [];
+      const combinedReviews: {
+        id: string;
+        author: string;
+        content: string;
+        rating: number | null;
+        source: string;
+        created_at: string;
+      }[] = [];
   
       // Add TMDB reviews
       if (tmdbData.results) {
-        const tmdbReviews = tmdbData.results.map((review) => ({
+        const tmdbReviews = tmdbData.results.map((review: { id: unknown; author: unknown; content: unknown; author_details: { rating: unknown; }; created_at: unknown; }) => ({
           id: `tmdb-${review.id}`,
           author: review.author || 'Anonymous',
           content: review.content,
@@ -68,7 +102,7 @@ export default function ReviewsPage() {
   
       // Add OMDB reviews
       if (omdbData.Ratings) {
-        const omdbReviews = omdbData.Ratings.map((rating, index) => ({
+        const omdbReviews = omdbData.Ratings.map((rating: { Source: unknown; Value: string; }, index: unknown) => ({
           id: `omdb-${index}`,
           author: rating.Source,
           content: `Rating: ${rating.Value}`,
@@ -133,7 +167,7 @@ export default function ReviewsPage() {
     }
   }, []);
 
-  const handleMovieSelect = (movieId) => {
+  const handleMovieSelect = (movieId: string) => {
     // Navigate to the movie's review page
     router.push(`/reviews/${movieId}`);
   };
@@ -146,6 +180,8 @@ export default function ReviewsPage() {
       reviews: [],
       movieDetailsFetched: false,
       loading: false,
+      director: '',
+      cast: [],
     });
     router.push('/reviews/1');
   };
@@ -157,13 +193,15 @@ export default function ReviewsPage() {
       reviews: [],
       movieDetailsFetched: false,
       loading: false,
+      director: '',
+      cast: [],
     });
     router.push('/'); // Navigate back to home
   };
 
   return (
-    <div className="min-h-screen bg-black text-red-500 p-4 relative">
-      <h1 className="text-3xl md:text-6xl font-nosifer text-center mb-12 text-red-600 text-shadow-horror tracking-wider animate-pulse">
+    <div className="min-h-screen bg-black text-red-500 p-4 sm:p-6 md:p-8 relative max-w-7xl mx-auto">
+      <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl xl:text-6xl font-nosifer text-center mb-8 sm:mb-12 text-red-600 text-shadow-horror tracking-wider animate-pulse">
         HORROR MOVIE REVIEWS
       </h1>
 
@@ -188,17 +226,15 @@ export default function ReviewsPage() {
         )}
       </div>
 
-
-
       {/* Search Bar - Only show on /components/reviews/1 */}
       {(!state.selectedMovie && window.location.pathname.endsWith('')) && (
-        <div className="max-w-2xl mx-auto mb-8">
+        <div className="max-w-2xl mx-auto mb-8 px-4 sm:px-6 md:px-8">
           <div className="relative">
             <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-red-500" />
             <input
               type="text"
               value={state.searchTerm}
-              onChange={(e) => setState(prev => ({ ...prev, searchTerm: e.target.value }))}
+              onChange={(e) => setState(prev => ({ ...prev, searchTerm: e.target.value }))} // use prevState correctly
               placeholder="Search for horror movies..."
               className="w-full pl-12 pr-4 py-3 bg-gray-900/80 text-red-500 rounded-full border border-red-700 focus:outline-none font-nosifer focus:ring-2 focus:ring-red-500"
             />
@@ -208,34 +244,30 @@ export default function ReviewsPage() {
 
       {/* Search Results */}
       {(!state.selectedMovie && state.searchResults.length > 0) && (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-7xl mx-auto">
-          {state.searchResults.map((movie) => (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6 md:gap-8 max-w-7xl mx-auto px-4 sm:px-6 md:px-8">
+          {(state.searchResults as { id: string; title: string; release_date: string; poster_path: string | null }[]).map((movie) => (
             <div
               key={movie.id}
               onClick={() => handleMovieSelect(movie.id)}
-              className="bg-gray-900/80 rounded-lg p-4 cursor-pointer hover:bg-gray-800/80 transition-all duration-300 border border-red-800"
+              className="bg-gray-900/80 rounded-lg p-4 cursor-pointer hover:bg-gray-800/80 transition-all duration-300 border border-red-800 flex flex-col h-full"
             >
-              <div className="flex gap-4">
+              <div className="flex flex-col sm:flex-row gap-4 h-full">
                 {movie.poster_path ? (
-                  <img
+                  <Image
                     src={`https://image.tmdb.org/t/p/w200${movie.poster_path}`}
                     alt={movie.title}
-                    className="w-24 h-36 object-cover rounded"
+                    width={200}
+                    height={300}
+                    className="w-full sm:w-24 h-36 object-cover rounded"
                   />
                 ) : (
-                  <div className="w-24 h-36 bg-gray-800 rounded flex items-center justify-center">
+                  <div className="w-full sm:w-24 h-36 bg-gray-800 rounded flex items-center justify-center">
                     <Film className="w-8 h-8 text-red-500" />
                   </div>
                 )}
-                <div>
-                  <h3 className="font-nosifer text-lg text-red-400">{movie.title}</h3>
-                  <p className="text-sm text-gray-400 mt-2">
-                    {new Date(movie.release_date).getFullYear()}
-                  </p>
-                  <div className="flex items-center mt-2">
-                    <Star className="w-4 h-4 text-yellow-400" />
-                    <span className="ml-2 text-yellow-300">{movie.vote_average.toFixed(1)}</span>
-                  </div>
+                <div className="flex flex-col justify-between flex-grow">
+                  <h3 className="font-nosifer text-lg text-red-600">{movie.title}</h3>
+                  <p className="text-sm text-red-500">{movie.release_date}</p>
                 </div>
               </div>
             </div>
@@ -243,76 +275,65 @@ export default function ReviewsPage() {
         </div>
       )}
 
-      {/* Movie Details and Reviews */}
+      {/* Selected Movie Details */}
       {state.selectedMovie && (
-        <div className="max-w-4xl mx-auto">
-          <div className="bg-gray-900/80 rounded-lg p-6 border border-red-800 mb-8">
-            <div className="flex flex-col md:flex-row gap-6">
-              {state.selectedMovie.poster_path && (
-                <img
-                  src={`https://image.tmdb.org/t/p/w400${state.selectedMovie.poster_path}`}
+        <div className="max-w-6xl mx-auto mt-8 px-4 sm:px-6 md:px-8">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            <div className="flex flex-col sm:flex-row gap-4">
+              {state.selectedMovie.poster_path ? (
+                <Image
+                  src={`https://image.tmdb.org/t/p/w300${state.selectedMovie.poster_path}`}
                   alt={state.selectedMovie.title}
-                  className="w-full md:w-64 rounded-lg"
+                  width={300}
+                  height={450}
+                  className="w-full sm:w-64 h-96 object-cover rounded"
                 />
-              )}
-              <div>
-                <h2 className="text-2xl font-nosifer text-red-400 mb-4">
-                  {state.selectedMovie.title}
-                </h2>
-                <p className="text-gray-400 mb-4">{state.selectedMovie.overview}</p>
-                <div className="text-gray-300 mb-4">
-                  <p><strong>Director:</strong> {state.director}</p>
-                  <p><strong>Cast:</strong> {state.cast.join(', ')}</p>
+              ) : (
+                <div className="w-full sm:w-64 h-96 bg-gray-800 rounded flex items-center justify-center">
+                  <Film className="w-16 h-16 text-red-500" />
                 </div>
-                <div className="flex items-center">
-                  <Star className="w-5 h-5 text-yellow-400" />
-                  <span className="ml-2 text-yellow-300">
-                    {state.selectedMovie.vote_average.toFixed(1)}
-                  </span>
+              )}
+              <div className="flex-grow">
+                <h2 className="text-2xl font-nosifer text-red-600">{state.selectedMovie.title}</h2>
+                <p className="text-sm text-red-500">{state.selectedMovie.release_date}</p>
+                <p className="text-sm text-gray-400 mt-2">{state.selectedMovie.overview}</p>
+
+                <div className="mt-4">
+                  <h3 className="text-xl font-nosifer text-red-600">Director: {state.director}</h3>
+                  <h3 className="text-xl font-nosifer text-red-600 mt-2">Cast:</h3>
+                  <ul className="list-disc ml-6">
+                    {state.cast.map((actor, index) => (
+                      <li key={index} className="text-red-500">{actor}</li>
+                    ))}
+                  </ul>
                 </div>
               </div>
             </div>
-          </div>
 
-          {/* Reviews Section */}
-          <div className="space-y-6">
-            <h3 className="text-2xl font-nosifer mb-6">Reviews</h3>
-            {state.reviews.length > 0 ? (
-              state.reviews.map((review) => (
-                <div
-                  key={review.id}
-                  className="bg-gray-900/80 p-6 rounded-lg border border-red-800"
-                >
-                  <div className="flex justify-between items-start mb-4">
-                    <h4 className="font-nosifer text-red-400">
-                      {review.author} <span className="text-gray-500">({review.source})</span>
-                    </h4>
-                    {review.rating && (
-                      <div className="flex items-center">
-                        <Star className="w-4 h-4 text-yellow-400" />
-                        <span className="ml-2 text-yellow-300">{review.rating}</span>
+            {/* Reviews Section */}
+            <div>
+              <h3 className="text-xl font-nosifer text-red-600 mb-4">Reviews</h3>
+              <div className="space-y-4 max-h-[600px] overflow-y-auto pr-4 scrollbar-thin scrollbar-thumb-red-600 scrollbar-track-gray-800">
+                {state.reviews.length > 0 ? (
+                  state.reviews.map((review) => (
+                    <div key={review.id} className="bg-gray-900/80 p-4 rounded-lg border border-red-700">
+                      <h4 className="text-lg text-red-500 font-semibold">{review.author}</h4>
+                      <p className="text-sm text-gray-400">{review.content as string}</p>
+                      <div className="flex items-center gap-2 mt-2">
+                        <Star className="w-5 h-5 text-yellow-500" />
+                        <span className="text-yellow-500">{review.rating || 'N/A'} / 10</span>
                       </div>
-                    )}
-                  </div>
-                  <p className="text-gray-400 whitespace-pre-line">{review.content}</p>
-                  <p className="text-sm text-gray-500 mt-4">
-                    {new Date(review.created_at).toLocaleDateString()}
-                  </p>
-                </div>
-              ))
-            ) : (
-              <p className="text-center text-gray-500">No reviews available for this movie.</p>
-            )}
+                    </div>
+                  ))
+                ) : (
+                  <p className="text-red-400">No reviews available.</p>
+                )}
+              </div>
+            </div>
           </div>
-        </div>
-      )}
-
-      {/* Loading State */}
-      {state.loading && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center backdrop-blur-sm">
-          <div className="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-red-500"></div>
         </div>
       )}
     </div>
   );
 }
+

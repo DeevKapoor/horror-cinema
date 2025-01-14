@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
+import Image from 'next/image'  // Correctly import the Image component from Next.js
 
 const hauntedImages = [
   '/haunted1.png',
@@ -29,13 +30,14 @@ export default function HauntedOverlay() {
         transition={{ duration: 2 }}
         className="fixed inset-0 pointer-events-none z-40"
       >
-        <img 
+        <Image
           src={hauntedImages[currentImage]} 
           alt="Haunted Overlay" 
-          className="w-full h-full object-cover"
+          layout="fill" // Use layout="fill" to make the image cover the container
+          objectFit="cover" // Make sure the image covers the full screen
+          className="w-full h-full" // Full screen styling
         />
       </motion.div>
     </AnimatePresence>
   )
 }
-

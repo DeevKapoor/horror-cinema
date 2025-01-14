@@ -1,6 +1,7 @@
 'use client'
 
 import { motion, AnimatePresence } from 'framer-motion'
+import Image from 'next/image'
 
 interface SpookyOverlayProps {
   isVisible: boolean
@@ -26,11 +27,16 @@ export default function SpookyOverlay({ isVisible }: SpookyOverlayProps) {
             exit={{ scale: 0.5, opacity: 0 }}
             transition={{ duration: 2 }}
           >
-            <img src="/ghost.png" alt="Spooky Ghost" className="w-1/4 h-1/4 object-contain opacity-30" />
+            <Image
+              src="/spooky.png"
+              alt="Spooky Ghost"
+              width={100}  // Set the width
+              height={100} // Set the height
+              className="object-contain opacity-30"
+            />
           </motion.div>
         </motion.div>
       )}
     </AnimatePresence>
   )
 }
-

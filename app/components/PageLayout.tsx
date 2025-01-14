@@ -2,15 +2,20 @@
 
 import { motion } from 'framer-motion'
 import { useEffect, useState } from 'react'
-import HorrorBackground from './HorroBackground'
+import HorrorBackground from './HorrorBackground'
 import Navigation from './Navigation'
 import SpookyOverlay from './SpookyOverlay'
 
-interface PageLayoutProps {
-  children: React.ReactNode
-  title: string
-}
 
+interface PageLayoutProps {
+
+  title: string;
+
+  children: React.ReactNode;
+
+  className?: string; // Add className property
+
+}
 export default function PageLayout({ children, title }: PageLayoutProps) {
   const [showOverlay, setShowOverlay] = useState(false)
 

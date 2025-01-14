@@ -1,16 +1,20 @@
 'use client'
 
-import { useEffect, useState, useRef } from 'react'
+import { useEffect, useState, useRef, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Skull, ChevronLeft, ChevronRight, Search, PlayCircle, Edit3, Droplet } from 'lucide-react'
 import PageLayout from '../components/PageLayout'
 import Image from 'next/image'
 import { useRouter } from 'next/navigation'
-
+import '../components/styles.css'
 const TMDB_API_KEY = '95a07433f19cbefdd02f495c48939a37'
 const BASE_URL = 'https://api.themoviedb.org/3/'
 
 interface Movie {
+  vote_average: unknown
+  overview: unknown
+  release_date: string | undefined
+  poster_path: unknown
   id: number
   title: string
   posterUrl: string
@@ -31,16 +35,12 @@ export default function MoviePage() {
   const [isAutocompleteVisible, setIsAutocompleteVisible] = useState<boolean>(false)
   const [scrollPosition, setScrollPosition] = useState(0)
   const carouselRef = useRef<HTMLDivElement>(null)
-  const searchDebounceRef = useRef<NodeJS.Timeout>()
+  const searchDebounceRef = useRef<NodeJS.Timeout | null>(null)
 
-  useEffect(() => {
-    fetchBestOf2024Movies()
-  }, [])
-
-  const fetchBestOf2024Movies = async () => {
+  // Memoize the function to prevent it from changing on every render
+  const fetchBestOf2024Movies = useCallback(async () => {
     try {
       const url = `${BASE_URL}discover/movie?api_key=${TMDB_API_KEY}&with_genres=27&sort_by=popularity.desc`
-
       const response = await fetch(url)
       const data = await response.json()
       setMovies(formatMovieData(data.results))
@@ -49,18 +49,26 @@ export default function MoviePage() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [])
 
-  const formatMovieData = (results: any[]): Movie[] => {
+  useEffect(() => {
+    fetchBestOf2024Movies()
+  }, [fetchBestOf2024Movies]) // Add fetchBestOf2024Movies to the dependency array
+
+  const formatMovieData = (results: Movie[]): Movie[] => {
     return results
-      .filter((movie: any) => movie.poster_path)
-      .map((movie: any) => ({
+      .filter((movie: Movie) => movie.poster_path)
+      .map((movie: Movie) => ({
+        vote_average: movie.vote_average as number,
+        overview: movie.overview as string,
+        release_date: movie.release_date,
+        poster_path: movie.poster_path,
         id: movie.id,
         title: movie.title,
         posterUrl: `https://image.tmdb.org/t/p/w500${movie.poster_path}`,
         year: movie.release_date?.split('-')[0] || '2024',
-        description: movie.overview,
-        rating: movie.vote_average,
+        description: movie.overview as string,
+        rating: movie.vote_average as number,
         genre: 'Horror',
         trailerUrl: `/trailers`,
         reviewsUrl: `/reviews/${movie.id}`,
@@ -107,18 +115,15 @@ export default function MoviePage() {
     setMovies([movie])
     setSearchTerm('')
     setIsAutocompleteVisible(false)
-
-    // Redirect to the reviews page using the movie's ID
-   
   }
+
   const handleReviewClick = (movie: Movie) => {
     router.push(`/reviews/${movie.id}`)
   }
 
   const handleTrailerClick = (movie: Movie) => {
-    // URL-encode the movie title to ensure it's safe to pass in the URL
     const movieTitleEncoded = encodeURIComponent(movie.title)
-    router.push(`/trailers/${movieTitleEncoded}`) // Navigate to /trailers/[movieName]
+    router.push(`/trailers/${movieTitleEncoded}`)
   }
 
   const scrollCarousel = (direction: 'left' | 'right') => {
@@ -209,9 +214,9 @@ export default function MoviePage() {
           {movies.length === 1 && movies[0].title !== '' ? 'YOUR NIGHTMARE AWAITS' : 'BEST OF 2024 HORROR'}
         </motion.h2>
 
-        <div className="carousel-container relative">
+        <div className="carousel-container relative overflow-hidden">
           <motion.button
-            className="scroll-button absolute top-1/2 left-2 transform -translate-y-1/2 bg-red-600 text-white rounded-full p-2 z-10"
+            className="scroll-button absolute top-1/2 left-2 transform -translate-y-1/2 bg-red-600 text-white rounded-full p-2 z-10 opacity-75 hover:opacity-100 transition-opacity duration-300"
             onClick={() => scrollCarousel('left')}
             whileHover={{ scale: 1.1, boxShadow: '0 0 15px rgba(255, 0, 0, 0.7)' }}
             whileTap={{ scale: 0.9 }}
@@ -221,8 +226,8 @@ export default function MoviePage() {
 
           <div
             ref={carouselRef}
-            className="flex overflow-x-auto carousel-scroll py-6 gap-4 md:gap-6"
-            style={{ scrollSnapType: 'x mandatory' }}
+            className="flex overflow-x-auto carousel-scroll py-6 gap-4 md:gap-6 scrollbar-thin scrollbar-thumb-red-600 scrollbar-track-gray-800"
+            style={{ scrollSnapType: 'x mandatory', scrollbarWidth: 'thin' }}
           >
             {loading ? (
               <div className="flex justify-center items-center w-full h-64">
@@ -249,34 +254,32 @@ export default function MoviePage() {
                   style={{ scrollSnapAlign: 'center' }}
                   whileHover={{ scale: 1.05, zIndex: 10 }}
                 >
-                  <div className="relative w-[85vw] sm:w-[300px] md:w-[320px] lg:w-[350px] aspect-[2/3] rounded-lg overflow-hidden shadow-[0_0_15px_rgba(255,0,0,0.5)]">
+                  <div className="relative w-[250px] sm:w-[300px] md:w-[320px] lg:w-[350px] aspect-[2/3] rounded-lg overflow-hidden shadow-[0_0_15px_rgba(255,0,0,0.5)]">
                     <Image
                       src={movie.posterUrl}
                       alt={movie.title}
                       fill
                       className="object-cover rounded-lg"
                     />
-                    <div className="movie-overlay absolute inset-0 flex flex-col justify-center items-center p-4 text-center bg-gradient-to-t from-black to-transparent opacity-0 hover:opacity-100 transition-opacity duration-300">
+                    <div className="movie-overlay absolute inset-0 flex flex-col justify-end items-center p-4 text-center bg-gradient-to-t from-black via-black/70 to-transparent opacity-0 hover:opacity-100 transition-opacity duration-300">
                       <h3 className="text-red-500 text-xl mb-2 font-nosifer">{movie.title}</h3>
                       <p className="text-red-400 mb-4">{movie.rating.toFixed(1)} ★</p>
                       <div className="flex flex-col sm:flex-row gap-4">
                         <motion.button
                           onClick={() => handleTrailerClick(movie)}
-                         
                           className="flex items-center gap-2 bg-red-600 text-white px-4 py-2 rounded-full hover:bg-red-700 transition-colors"
                           whileHover={{ scale: 1.1, boxShadow: '0 0 15px rgba(255, 0, 0, 0.7)' }}
                         >
                           <PlayCircle size={20} />
-                          <span className="font-nosifer">Trailer</span>
+                          <span className="font-nosifer text-sm">Trailer</span>
                         </motion.button>
                         <motion.button
                           onClick={() => handleReviewClick(movie)}
-                          
                           className="flex items-center gap-2 bg-gray-800 text-white px-4 py-2 rounded-full hover:bg-gray-700 transition-colors"
                           whileHover={{ scale: 1.1, boxShadow: '0 0 15px rgba(255, 255, 255, 0.3)' }}
                         >
                           <Edit3 size={20} />
-                          <span className="font-nosifer">Reviews</span>
+                          <span className="font-nosifer text-sm">Reviews</span>
                         </motion.button>
                       </div>
                     </div>
@@ -287,7 +290,7 @@ export default function MoviePage() {
           </div>
 
           <motion.button
-            className="scroll-button absolute top-1/2 right-2 transform -translate-y-1/2 bg-red-600 text-white rounded-full p-2 z-10"
+            className="scroll-button absolute top-1/2 right-2 transform -translate-y-1/2 bg-red-600 text-white rounded-full p-2 z-10 opacity-75 hover:opacity-100 transition-opacity duration-300"
             onClick={() => scrollCarousel('right')}
             whileHover={{ scale: 1.1, boxShadow: '0 0 15px rgba(255, 0, 0, 0.7)' }}
             whileTap={{ scale: 0.9 }}
@@ -296,15 +299,8 @@ export default function MoviePage() {
           </motion.button>
         </div>
       </div>
-      <style jsx global>{`
-        @import url('https://fonts.googleapis.com/css2?family=Nosifer&display=swap');
-
-        body {
-          background-color: #000000;
-          color: #ff0000;
-          cursor: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="red" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19l7-7 3 3-7 7-3-3z"/><path d="M18 13l-1.5-7.5L2 2l3.5 14.5L13 18l5-5z"/><path d="M2 2l7.586 7.586"/><circle cx="12" cy="12" r="9" stroke="red" stroke-width="2" fill="none"/></svg>') 16 16, auto;
-        }
-      `}</style>
     </PageLayout>
   )
 }
+
+
