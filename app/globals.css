@@ -3,19 +3,107 @@
 @tailwind utilities;
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+  --foreground-rgb: 255, 255, 255;
+  --background-start-rgb: 0, 0, 0;
+  --background-end-rgb: 20, 0, 0;
 }
 
 body {
-  color: var(--foreground);
-  background: var(--background);
-  font-family: Arial, Helvetica, sans-serif;
+  color: rgb(var(--foreground-rgb));
+  background: linear-gradient(
+      to bottom,
+      transparent,
+      rgb(var(--background-end-rgb))
+    )
+    rgb(var(--background-start-rgb));
+  cursor: none;
 }
+
+.font-nosifer {
+  font-family: var(--font-nosifer);
+}
+
+.font-creepster {
+  font-family: var(--font-creepster);
+}
+
+@keyframes flicker {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.7; }
+}
+
+.animate-flicker {
+  animation: flicker 4s infinite;
+}
+
+.horror-cursor {
+  width: 32px;
+  height: 32px;
+  background-image: url('/blood-drop.png');
+  background-size: contain;
+  background-repeat: no-repeat;
+  position: fixed;
+  pointer-events: none;
+  z-index: 9999;
+  transition: transform 0.1s ease;
+}
+
+.horror-cursor::after {
+  content: '';
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  background-image: url('/blood-splatter.png');
+  background-size: contain;
+  background-repeat: no-repeat;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.horror-cursor.clicking::after {
+  opacity: 1;
+}
+
+.text-shadow-horror {
+  text-shadow: 0 0 10px rgba(255, 0, 0, 0.5);
+}
+
+@keyframes creepy-text {
+  0%, 100% { transform: skew(0deg, 0deg); }
+  25% { transform: skew(2deg, 2deg); }
+  75% { transform: skew(-2deg, -2deg); }
+}
+
+.creepy-text {
+  animation: creepy-text 5s ease-in-out infinite;
+  display: inline-block;
+}
+
+@keyframes fog-animation {
+  0% { transform: translateX(-10%); }
+  100% { transform: translateX(10%); }
+}
+
+.fog {
+  position: fixed;
+  top: 0;
+  left: -10%;
+  width: 120%;
+  height: 100vh;
+  background-image: url('/fog.png');
+  background-size: cover;
+  opacity: 0.1;
+  animation: fog-animation 60s ease-in-out infinite alternate;
+  pointer-events: none;
+  z-index: 5;
+}
+
+@keyframes floating {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-20px); }
+}
+
+.floating {
+  animation: floating 6s ease-in-out infinite;
+}
+
